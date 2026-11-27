@@ -7,7 +7,7 @@ from saf_copy_smoke import PACKAGE, nodes, names, shell, tap, wait_for
 
 def offer(url):
     shell(
-        f"am start -W --activity-single-top -a android.intent.action.SEND "
+        f"am start -W -a android.intent.action.SEND "
         f"-t text/plain --es android.intent.extra.TEXT {url} -n {PACKAGE}/.MainActivity"
     )
     wait_for("Открыть полученную ссылку?")
