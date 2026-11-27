@@ -19,6 +19,7 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.ui.Alignment
@@ -29,15 +30,18 @@ import androidx.compose.ui.semantics.heading
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import com.lumeryx.app.R
+import com.lumeryx.app.browser.BrowserModel
 import com.lumeryx.app.library.LibraryViewModel
 import com.lumeryx.app.settings.SettingsState
 import com.lumeryx.app.settings.ThemeMode
 import com.lumeryx.app.transfer.CopyViewModel
+import com.lumeryx.app.ui.browser.BrowserScreen
 import com.lumeryx.app.ui.library.LibraryScreen
 import com.lumeryx.app.ui.transfer.CopyScreen
 
@@ -59,6 +63,7 @@ internal fun LumeryxApp(
     settings: SettingsState,
     libraryModel: LibraryViewModel,
     copyModel: CopyViewModel,
+    browserModel: BrowserModel,
     onThemeSelected: (ThemeMode) -> Unit,
     onRetryRead: () -> Unit,
 ) {
@@ -67,6 +72,18 @@ internal fun LumeryxApp(
     val entry by navigation.currentBackStackEntryAsState()
     val current = Destination.entries.firstOrNull { it.route == entry?.destination?.route }
         ?: Destination.Home
+
+    fun open(destination: Destination) {
+        navigation.navigate(destination.route) {
+            popUpTo(Destination.Home.route) { saveState = true }
+            launchSingleTop = true
+            restoreState = true
+        }
+    }
+    val incoming by browserModel.incoming.collectAsStateWithLifecycle()
+    LaunchedEffect(incoming) {
+        if (incoming != null && current != Destination.Browser) open(Destination.Browser)
+    }
 
     Scaffold(
         topBar = {
@@ -83,13 +100,7 @@ internal fun LumeryxApp(
                     NavigationBarItem(
                         selected = current == destination,
                         onClick = {
-                            if (current != destination) {
-                                navigation.navigate(destination.route) {
-                                    popUpTo(Destination.Home.route) { saveState = true }
-                                    launchSingleTop = true
-                                    restoreState = true
-                                }
-                            }
+                            if (current != destination) open(destination)
                         },
                         icon = { Icon(painterResource(destination.icon), contentDescription = null) },
                         label = {
@@ -116,7 +127,7 @@ internal fun LumeryxApp(
                 LibraryScreen(libraryModel)
             }
             composable(Destination.Browser.route) {
-                SectionMessage(R.string.browser_unavailable, R.string.browser_description)
+                BrowserScreen(browserModel)
             }
             composable(Destination.Cloud.route) {
                 CopyScreen(copyModel)
