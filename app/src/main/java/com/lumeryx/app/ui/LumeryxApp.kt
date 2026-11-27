@@ -20,6 +20,7 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.painterResource
@@ -56,6 +57,7 @@ internal fun LumeryxApp(
     onRetryRead: () -> Unit,
 ) {
     val navigation = rememberNavController()
+    val currentSettings by rememberUpdatedState(settings)
     val entry by navigation.currentBackStackEntryAsState()
     val current = Destination.entries.firstOrNull { it.route == entry?.destination?.route }
         ?: Destination.Home
@@ -114,7 +116,7 @@ internal fun LumeryxApp(
                 SectionMessage(R.string.cloud_unavailable, R.string.cloud_description)
             }
             composable(Destination.Settings.route) {
-                SettingsScreen(settings, onThemeSelected, onRetryRead)
+                SettingsScreen(currentSettings, onThemeSelected, onRetryRead)
             }
         }
     }
