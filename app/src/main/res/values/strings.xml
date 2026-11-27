@@ -85,6 +85,7 @@
     <string name="browser_share">Поделиться ссылкой</string>
     <string name="browser_external">Открыть в другом приложении</string>
     <string name="browser_save">Добавить закладку</string>
+    <string name="browser_bookmark_error">Не удалось сохранить изменение закладок.</string>
     <string name="browser_unsave">Удалить закладку</string>
     <string name="browser_done">Готово</string>
     <string name="browser_empty">Введите адрес сайта.</string>

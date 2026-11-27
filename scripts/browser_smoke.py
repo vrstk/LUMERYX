@@ -32,6 +32,9 @@ def main():
     tap("Example Domain")
     tap("Ссылка")
     tap("Добавить закладку")
+    tap("Закладки")
+    wait_for("Example Domain")
+    tap("Готово")
     print("Browser loaded HTTPS and saved a bookmark", flush=True)
 
     shell("am", "force-stop", PACKAGE)

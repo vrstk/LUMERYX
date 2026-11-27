@@ -2,8 +2,13 @@ package com.lumeryx.app.browser
 
 import android.content.Context
 import androidx.lifecycle.ViewModel
+import androidx.lifecycle.viewModelScope
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.update
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import org.json.JSONArray
 import org.json.JSONObject
 
@@ -23,6 +28,8 @@ internal data class BrowserSession(
     val selected: Long = 1,
     val bookmarks: List<BrowserLink> = emptyList(),
     val history: List<BrowserLink> = emptyList(),
+    val bookmarkSaving: Boolean = false,
+    val bookmarkError: Boolean = false,
 ) {
     val current: BrowserTab get() = tabs.first { it.id == selected }
 }
@@ -84,12 +91,25 @@ internal class BrowserModel(context: Context) : ViewModel() {
 
     fun toggleBookmark() {
         val session = state.value
+        if (session.bookmarkSaving) return
         val tab = session.current
         val url = tab.url ?: return
         val remaining = session.bookmarks.filterNot { it.url == url }
         val bookmarks = if (remaining.size != session.bookmarks.size) remaining
         else (listOf(BrowserLink(url, tab.label)) + remaining).take(200)
-        save(session.copy(bookmarks = bookmarks))
+        mutable.update { it.copy(bookmarkSaving = true, bookmarkError = false) }
+        viewModelScope.launch {
+            val stored = withContext(Dispatchers.IO) {
+                prefs.edit().putString("bookmarks", encodeLinks(bookmarks).toString()).commit()
+            }
+            mutable.update {
+                it.copy(
+                    bookmarks = if (stored) bookmarks else it.bookmarks,
+                    bookmarkSaving = false,
+                    bookmarkError = !stored,
+                )
+            }
+        }
     }
 
     fun clearHistory() = save(state.value.copy(history = emptyList()))
@@ -107,7 +127,6 @@ internal class BrowserModel(context: Context) : ViewModel() {
                 session.tabs.forEach { put(JSONObject().put("id", it.id).put("url", it.url).put("label", it.label)) }
             })
             .put("selected", session.selected)
-            .put("bookmarks", encodeLinks(session.bookmarks))
             .put("history", encodeLinks(session.history))
         prefs.edit().putString("session", json.toString()).apply()
     }
@@ -123,7 +142,10 @@ internal class BrowserModel(context: Context) : ViewModel() {
         BrowserSession(
             tabs,
             selected.takeIf { id -> tabs.any { it.id == id } } ?: tabs.first().id,
-            decodeLinks(json.optJSONArray("bookmarks"), 200),
+            decodeLinks(
+                runCatching { JSONArray(prefs.getString("bookmarks", "[]") ?: "[]") }.getOrNull(),
+                200,
+            ),
             decodeLinks(json.optJSONArray("history"), 100),
         )
     }.getOrDefault(BrowserSession())

@@ -126,6 +126,7 @@ internal fun BrowserScreen(model: BrowserModel) {
                         val bookmarked = session.bookmarks.any { it.url == tab.url }
                         DropdownMenuItem(
                             text = { Text(stringResource(if (bookmarked) R.string.browser_unsave else R.string.browser_save)) },
+                            enabled = !session.bookmarkSaving,
                             onClick = { linkMenu = false; model.toggleBookmark() },
                         )
                         DropdownMenuItem(
@@ -161,7 +162,7 @@ internal fun BrowserScreen(model: BrowserModel) {
             }
         }
 
-        val error = webError
+        val error = if (session.bookmarkError) R.string.browser_bookmark_error else webError
         if (error != null) {
             Row(Modifier.fillMaxWidth().padding(horizontal = 12.dp)) {
                 Text(
