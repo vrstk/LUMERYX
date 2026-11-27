@@ -1,5 +1,6 @@
 package com.lumeryx.app
 
+import android.content.Intent
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
@@ -11,6 +12,7 @@ import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.initializer
 import androidx.lifecycle.viewmodel.viewModelFactory
+import com.lumeryx.app.browser.BrowserModel
 import com.lumeryx.app.library.LibraryDatabase
 import com.lumeryx.app.library.LibraryViewModel
 import com.lumeryx.app.library.SafLibraryRepository
@@ -24,6 +26,20 @@ import com.lumeryx.app.ui.LumeryxTheme
 import com.lumeryx.app.ui.useDarkTheme
 
 class MainActivity : ComponentActivity() {
+    private lateinit var browserModel: BrowserModel
+
+    override fun onNewIntent(intent: Intent) {
+        super.onNewIntent(intent)
+        setIntent(intent)
+        acceptSharedLink(intent)
+    }
+
+    private fun acceptSharedLink(intent: Intent) {
+        if (intent.action == Intent.ACTION_SEND && intent.type == "text/plain") {
+            intent.getCharSequenceExtra(Intent.EXTRA_TEXT)?.toString()?.let(browserModel::offerLink)
+        }
+    }
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
@@ -36,12 +52,16 @@ class MainActivity : ComponentActivity() {
                 val dao = LibraryDatabase.get(applicationContext).libraryDao()
                 LibraryViewModel(SafLibraryRepository(applicationContext.contentResolver, dao))
             }
+            initializer { BrowserModel(applicationContext) }
             initializer { CopyViewModel(SafCopyStorage(applicationContext.contentResolver)) }
         }
         val models = ViewModelProvider(this, factory)
         val settingsModel = models[SettingsViewModel::class.java]
         val libraryModel = models[LibraryViewModel::class.java]
         val copyModel = models[CopyViewModel::class.java]
+
+        browserModel = models[BrowserModel::class.java]
+        if (savedInstanceState == null) acceptSharedLink(intent)
 
         setContent {
             val settings by settingsModel.state.collectAsStateWithLifecycle()
@@ -59,6 +79,7 @@ class MainActivity : ComponentActivity() {
                     settings = settings,
                     libraryModel = libraryModel,
                     copyModel = copyModel,
+                    browserModel = browserModel,
                     onThemeSelected = settingsModel::setTheme,
                     onRetryRead = settingsModel::loadSettings,
                 )
