@@ -2,7 +2,7 @@ name: Android
 
 on:
   pull_request:
-    branches: [main]
+    branches: [main, feature/android-foundation-0.1.0]
   push:
     branches: [main]
   workflow_dispatch:
