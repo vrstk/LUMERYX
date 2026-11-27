@@ -11,6 +11,9 @@ import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.initializer
 import androidx.lifecycle.viewmodel.viewModelFactory
+import com.lumeryx.app.library.LibraryDatabase
+import com.lumeryx.app.library.LibraryViewModel
+import com.lumeryx.app.library.SafLibraryRepository
 import com.lumeryx.app.settings.SettingsViewModel
 import com.lumeryx.app.settings.ThemePreferences
 import com.lumeryx.app.settings.lumeryxSettings
@@ -27,8 +30,14 @@ class MainActivity : ComponentActivity() {
             initializer {
                 SettingsViewModel(ThemePreferences(applicationContext.lumeryxSettings))
             }
+            initializer {
+                val dao = LibraryDatabase.get(applicationContext).libraryDao()
+                LibraryViewModel(SafLibraryRepository(applicationContext.contentResolver, dao))
+            }
         }
-        val settingsModel = ViewModelProvider(this, factory)[SettingsViewModel::class.java]
+        val models = ViewModelProvider(this, factory)
+        val settingsModel = models[SettingsViewModel::class.java]
+        val libraryModel = models[LibraryViewModel::class.java]
 
         setContent {
             val settings by settingsModel.state.collectAsStateWithLifecycle()
@@ -44,6 +53,7 @@ class MainActivity : ComponentActivity() {
             LumeryxTheme(dark = dark) {
                 LumeryxApp(
                     settings = settings,
+                    libraryModel = libraryModel,
                     onThemeSelected = settingsModel::setTheme,
                     onRetryRead = settingsModel::loadSettings,
                 )

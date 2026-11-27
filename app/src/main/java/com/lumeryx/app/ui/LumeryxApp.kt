@@ -34,8 +34,10 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import com.lumeryx.app.R
+import com.lumeryx.app.library.LibraryViewModel
 import com.lumeryx.app.settings.SettingsState
 import com.lumeryx.app.settings.ThemeMode
+import com.lumeryx.app.ui.library.LibraryScreen
 
 private enum class Destination(
     val route: String,
@@ -53,6 +55,7 @@ private enum class Destination(
 @Composable
 internal fun LumeryxApp(
     settings: SettingsState,
+    libraryModel: LibraryViewModel,
     onThemeSelected: (ThemeMode) -> Unit,
     onRetryRead: () -> Unit,
 ) {
@@ -107,7 +110,7 @@ internal fun LumeryxApp(
                 SectionMessage(R.string.home_title, R.string.home_description)
             }
             composable(Destination.Library.route) {
-                SectionMessage(R.string.library_unavailable, R.string.library_description)
+                LibraryScreen(libraryModel)
             }
             composable(Destination.Browser.route) {
                 SectionMessage(R.string.browser_unavailable, R.string.browser_description)
