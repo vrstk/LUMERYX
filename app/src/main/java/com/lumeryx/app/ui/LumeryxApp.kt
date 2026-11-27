@@ -10,6 +10,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material3.Button
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
@@ -44,6 +45,7 @@ import com.lumeryx.app.transfer.CopyViewModel
 import com.lumeryx.app.ui.browser.BrowserScreen
 import com.lumeryx.app.ui.library.LibraryScreen
 import com.lumeryx.app.ui.transfer.CopyScreen
+import com.lumeryx.app.ui.transfer.TransferHistoryScreen
 
 private enum class Destination(
     val route: String,
@@ -89,7 +91,8 @@ internal fun LumeryxApp(
         topBar = {
             TopAppBar(
                 title = {
-                    val title = if (current == Destination.Home) R.string.app_name else current.label
+                    val title = if (entry?.destination?.route == "transfers") R.string.transfer_history
+                    else if (current == Destination.Home) R.string.app_name else current.label
                     Text(stringResource(title))
                 },
             )
@@ -121,7 +124,9 @@ internal fun LumeryxApp(
             modifier = Modifier.padding(insets),
         ) {
             composable(Destination.Home.route) {
-                SectionMessage(R.string.home_title, R.string.home_description)
+                SectionMessage(R.string.home_title, R.string.home_description) {
+                    navigation.navigate("transfers") { launchSingleTop = true }
+                }
             }
             composable(Destination.Library.route) {
                 LibraryScreen(libraryModel)
@@ -130,7 +135,10 @@ internal fun LumeryxApp(
                 BrowserScreen(browserModel)
             }
             composable(Destination.Cloud.route) {
-                CopyScreen(copyModel)
+                CopyScreen(copyModel) { navigation.navigate("transfers") { launchSingleTop = true } }
+            }
+            composable("transfers") {
+                TransferHistoryScreen(copyModel) { navigation.popBackStack() }
             }
             composable(Destination.Settings.route) {
                 SettingsScreen(currentSettings, onThemeSelected, onRetryRead)
@@ -140,7 +148,7 @@ internal fun LumeryxApp(
 }
 
 @Composable
-private fun SectionMessage(@StringRes title: Int, @StringRes description: Int) {
+private fun SectionMessage(@StringRes title: Int, @StringRes description: Int, onHistory: () -> Unit) {
     Box(Modifier.fillMaxSize(), contentAlignment = Alignment.TopCenter) {
         Column(
             modifier = Modifier
@@ -160,6 +168,7 @@ private fun SectionMessage(@StringRes title: Int, @StringRes description: Int) {
                 style = MaterialTheme.typography.bodyLarge,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
+            Button(onClick = onHistory) { Text(stringResource(R.string.transfer_history)) }
         }
     }
 }

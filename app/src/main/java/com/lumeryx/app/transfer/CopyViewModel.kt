@@ -3,10 +3,12 @@ package com.lumeryx.app.transfer
 import android.os.SystemClock
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import java.io.IOException
+import java.util.UUID
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
+import kotlinx.coroutines.NonCancellable
+import kotlinx.coroutines.async
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
@@ -15,7 +17,7 @@ import kotlinx.coroutines.withContext
 
 internal enum class CopyStatus {
     PICKER_UNAVAILABLE, FOLDER_FAILED, COPIED, SKIPPED, FAILED, CANCELLED,
-    OVERLAP, UNSUPPORTED, UNVERIFIED, CLEANUP,
+    OVERLAP, UNSUPPORTED, UNVERIFIED, CLEANUP, JOURNAL_FAILED,
 }
 
 internal data class CopyReview(val document: CopyDocument, val conflict: Boolean)
@@ -31,11 +33,16 @@ internal data class CopyState(
     val bytes: Long = 0L,
 )
 
-internal class CopyViewModel(private val storage: SafCopyStorage) : ViewModel() {
+internal class CopyViewModel(
+    private val storage: SafCopyStorage,
+    private val journal: TransferJournalDao,
+) : ViewModel() {
     private val engine = CopyEngine(storage)
     private val mutableState = MutableStateFlow(CopyState())
     val state = mutableState.asStateFlow()
     private var operation: Job? = null
+    private val recovery = viewModelScope.async { journal.interruptRunning() }
+    val history = journal.observe()
 
     fun selectFolder(uri: String, destination: Boolean) = loadFolders {
         val document = storage.root(uri)
@@ -99,11 +106,28 @@ internal class CopyViewModel(private val storage: SafCopyStorage) : ViewModel() 
         }
 
         mutableState.value = current.copy(review = null, busy = true, copying = true, status = null, bytes = 0)
+        val entry = TransferJournalEntry(
+            id = UUID.randomUUID().toString(),
+            sourceUri = review.document.uri,
+            destinationUri = target.uri,
+            sourceName = review.document.name,
+            destinationName = target.name,
+            policy = policy.name,
+            createdAt = System.currentTimeMillis(),
+        )
         operation = viewModelScope.launch {
+            var started = false
+            var bytesCopied = 0L
+            var outcome = CopyStatus.FAILED
+            var conflict = false
             try {
+                recovery.await()
+                withContext(NonCancellable) {
+                    journal.insert(entry)
+                    started = true
+                }
                 val result = withContext(Dispatchers.IO) {
                     var lastUpdate = 0L
-                    var bytesCopied = 0L
                     engine.copy(review.document, target, policy) { bytes ->
                         bytesCopied = bytes
                         val now = SystemClock.elapsedRealtime()
@@ -111,47 +135,46 @@ internal class CopyViewModel(private val storage: SafCopyStorage) : ViewModel() 
                             lastUpdate = now
                             mutableState.update { it.copy(bytes = bytes) }
                         }
-                    }.also {
-                        mutableState.update { it.copy(bytes = bytesCopied) }
                     }
                 }
-                finish(if (result == CopyResult.COPIED) CopyStatus.COPIED else CopyStatus.SKIPPED)
+                outcome = if (result == CopyResult.COPIED) CopyStatus.COPIED else CopyStatus.SKIPPED
             } catch (failure: CopyException) {
-                if (failure.problem == CopyProblem.CONFLICT) {
-                    mutableState.update {
-                        it.copy(busy = false, copying = false, review = review.copy(conflict = true))
-                    }
-                } else {
-                    finish(
-                        when (failure.problem) {
-                            CopyProblem.OVERLAP -> CopyStatus.OVERLAP
-                            CopyProblem.UNSUPPORTED -> CopyStatus.UNSUPPORTED
-                            CopyProblem.UNVERIFIED -> CopyStatus.UNVERIFIED
-                            CopyProblem.CLEANUP -> CopyStatus.CLEANUP
-                            CopyProblem.CONFLICT -> CopyStatus.FAILED
-                        },
-                    )
+                conflict = failure.problem == CopyProblem.CONFLICT
+                outcome = when (failure.problem) {
+                    CopyProblem.OVERLAP -> CopyStatus.OVERLAP
+                    CopyProblem.UNSUPPORTED -> CopyStatus.UNSUPPORTED
+                    CopyProblem.UNVERIFIED -> CopyStatus.UNVERIFIED
+                    CopyProblem.CLEANUP -> CopyStatus.CLEANUP
+                    CopyProblem.CONFLICT -> CopyStatus.FAILED
                 }
             } catch (failure: CancellationException) {
-                finish(CopyStatus.CANCELLED)
+                outcome = CopyStatus.CANCELLED
                 throw failure
-            } catch (_: IOException) {
-                finish(CopyStatus.FAILED)
-            } catch (_: SecurityException) {
-                finish(CopyStatus.FAILED)
-            } catch (_: IllegalArgumentException) {
-                finish(CopyStatus.FAILED)
-            } catch (_: IllegalStateException) {
-                finish(CopyStatus.FAILED)
+            } catch (_: Exception) {
+                outcome = if (started) CopyStatus.FAILED else CopyStatus.JOURNAL_FAILED
+            } finally {
+                if (started) {
+                    val persisted = withContext(NonCancellable) {
+                        runCatching { journal.finish(entry.id, outcome.name, bytesCopied) == 1 }
+                            .getOrDefault(false)
+                    }
+                    if (!persisted) outcome = CopyStatus.JOURNAL_FAILED
+                }
+                val showConflict = conflict && outcome != CopyStatus.JOURNAL_FAILED
+                mutableState.update {
+                    it.copy(
+                        busy = false,
+                        copying = false,
+                        bytes = bytesCopied,
+                        status = if (showConflict) null else outcome,
+                        review = if (showConflict) review.copy(conflict = true) else null,
+                    )
+                }
             }
         }
     }
 
     fun cancel() {
         if (state.value.copying) operation?.cancel()
-    }
-
-    private fun finish(status: CopyStatus) {
-        mutableState.update { it.copy(busy = false, copying = false, status = status) }
     }
 }

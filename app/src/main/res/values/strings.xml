@@ -97,4 +97,11 @@
     <string name="browser_no_handler">Подходящее приложение не найдено.</string>
     <string name="browser_webview_unavailable">На устройстве недоступен системный браузер WebView.</string>
     <string name="browser_incoming">Открыть полученную ссылку?</string>
+    <string name="transfer_history">История передач</string>
+    <string name="transfer_history_back">Назад</string>
+    <string name="transfer_history_help">Последние 50 операций. Прерванные задачи не запускаются автоматически: сначала проверьте папку назначения.</string>
+    <string name="transfer_history_empty">Записей пока нет.</string>
+    <string name="transfer_running">Выполняется</string>
+    <string name="transfer_interrupted">Прервано. Проверьте папку назначения: часть файлов могла сохраниться.</string>
+    <string name="transfer_journal_failed">Не удалось сохранить состояние передачи. Проверьте историю и папку назначения перед повтором.</string>
 </resources>

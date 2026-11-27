@@ -186,6 +186,14 @@ def run(apk):
     tap("Копировать")
     wait_for("Нельзя копировать папку в неё саму или в её подпапку.")
     assert shell("ls", "-1", f"{DOWNLOAD}/{SOURCE}/Album").splitlines() == ["nested.txt"]
+    print("Checking durable transfer history after force stop", flush=True)
+    shell("am", "force-stop", PACKAGE)
+    shell("am", "start", "-W", "-n", f"{PACKAGE}/.MainActivity")
+    tap("Главная")
+    tap("История передач")
+    wait_for("Нельзя копировать папку в неё саму или в её подпапку.")
+    wait_for(SUCCESS)
+    tap("Назад")
     print("Android SAF smoke test passed", flush=True)
 
 

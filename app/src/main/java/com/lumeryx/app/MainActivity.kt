@@ -21,6 +21,7 @@ import com.lumeryx.app.settings.ThemePreferences
 import com.lumeryx.app.settings.lumeryxSettings
 import com.lumeryx.app.transfer.CopyViewModel
 import com.lumeryx.app.transfer.SafCopyStorage
+import com.lumeryx.app.transfer.TransferJournalDatabase
 import com.lumeryx.app.ui.LumeryxApp
 import com.lumeryx.app.ui.LumeryxTheme
 import com.lumeryx.app.ui.useDarkTheme
@@ -53,7 +54,12 @@ class MainActivity : ComponentActivity() {
                 LibraryViewModel(SafLibraryRepository(applicationContext.contentResolver, dao))
             }
             initializer { BrowserModel(applicationContext) }
-            initializer { CopyViewModel(SafCopyStorage(applicationContext.contentResolver)) }
+            initializer {
+                CopyViewModel(
+                    SafCopyStorage(applicationContext.contentResolver),
+                    TransferJournalDatabase.get(applicationContext).journal(),
+                )
+            }
         }
         val models = ViewModelProvider(this, factory)
         val settingsModel = models[SettingsViewModel::class.java]
