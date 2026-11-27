@@ -39,8 +39,8 @@ import com.lumeryx.app.settings.ThemeMode
 
 private enum class Destination(
     val route: String,
-    @StringRes val label: Int,
-    @DrawableRes val icon: Int,
+    @get:StringRes val label: Int,
+    @get:DrawableRes val icon: Int,
 ) {
     Home("home", R.string.nav_home, R.drawable.ic_home),
     Library("library", R.string.nav_library, R.drawable.ic_library),
