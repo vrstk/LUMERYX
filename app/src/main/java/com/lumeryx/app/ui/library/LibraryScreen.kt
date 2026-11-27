@@ -9,6 +9,8 @@ import androidx.annotation.StringRes
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.ExperimentalLayoutApi
+import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
@@ -227,6 +229,7 @@ internal fun LibraryScreen(model: LibraryViewModel) {
     }
 }
 
+@OptIn(ExperimentalLayoutApi::class)
 @Composable
 private fun LibraryControls(
     favoritesOnly: Boolean,
@@ -236,45 +239,53 @@ private fun LibraryControls(
     sort: LibrarySort,
     onSort: (LibrarySort) -> Unit,
 ) {
-    Row(
+    FlowRow(
         modifier = Modifier.fillMaxWidth().padding(horizontal = 12.dp),
-        horizontalArrangement = Arrangement.spacedBy(6.dp),
-        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.SpaceBetween,
+        itemVerticalAlignment = Alignment.CenterVertically,
     ) {
-        FilterChip(
-            selected = !favoritesOnly,
-            onClick = { onFavoritesOnly(false) },
-            label = { Text(stringResource(R.string.library_all_items)) },
-        )
-        FilterChip(
-            selected = favoritesOnly,
-            onClick = { onFavoritesOnly(true) },
-            label = { Text(stringResource(R.string.library_favorites)) },
-            modifier = Modifier.weight(1f, fill = false),
-        )
-        Box(Modifier.weight(1f))
-        LibraryIconButton(
-            if (listLayout) R.drawable.ic_grid else R.drawable.ic_list,
-            if (listLayout) R.string.library_grid else R.string.library_list,
-            onClick = onToggleLayout,
-        )
-        var expanded by remember { mutableStateOf(false) }
-        Box {
-            LibraryIconButton(R.drawable.ic_sort, sort.description, onClick = { expanded = true })
-            DropdownMenu(expanded = expanded, onDismissRequest = { expanded = false }) {
-                LibrarySort.entries.forEach { option ->
-                    DropdownMenuItem(
-                        text = { Text(stringResource(option.label)) },
-                        leadingIcon = if (sort == option) {
-                            { Icon(painterResource(R.drawable.ic_check), contentDescription = null) }
-                        } else {
-                            null
-                        },
-                        onClick = {
-                            expanded = false
-                            onSort(option)
-                        },
+        Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+            FilterChip(
+                selected = !favoritesOnly,
+                onClick = { onFavoritesOnly(false) },
+                label = { Text(stringResource(R.string.library_all_items), maxLines = 1) },
+            )
+            FilterChip(
+                selected = favoritesOnly,
+                onClick = { onFavoritesOnly(true) },
+                label = {
+                    Text(
+                        stringResource(R.string.library_favorites),
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
                     )
+                },
+            )
+        }
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            LibraryIconButton(
+                if (listLayout) R.drawable.ic_grid else R.drawable.ic_list,
+                if (listLayout) R.string.library_grid else R.string.library_list,
+                onClick = onToggleLayout,
+            )
+            var expanded by remember { mutableStateOf(false) }
+            Box {
+                LibraryIconButton(R.drawable.ic_sort, sort.description, onClick = { expanded = true })
+                DropdownMenu(expanded = expanded, onDismissRequest = { expanded = false }) {
+                    LibrarySort.entries.forEach { option ->
+                        DropdownMenuItem(
+                            text = { Text(stringResource(option.label)) },
+                            leadingIcon = if (sort == option) {
+                                { Icon(painterResource(R.drawable.ic_check), contentDescription = null) }
+                            } else {
+                                null
+                            },
+                            onClick = {
+                                expanded = false
+                                onSort(option)
+                            },
+                        )
+                    }
                 }
             }
         }

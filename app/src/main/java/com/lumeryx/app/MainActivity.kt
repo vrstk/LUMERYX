@@ -17,6 +17,8 @@ import com.lumeryx.app.library.SafLibraryRepository
 import com.lumeryx.app.settings.SettingsViewModel
 import com.lumeryx.app.settings.ThemePreferences
 import com.lumeryx.app.settings.lumeryxSettings
+import com.lumeryx.app.transfer.CopyViewModel
+import com.lumeryx.app.transfer.SafCopyStorage
 import com.lumeryx.app.ui.LumeryxApp
 import com.lumeryx.app.ui.LumeryxTheme
 import com.lumeryx.app.ui.useDarkTheme
@@ -34,10 +36,12 @@ class MainActivity : ComponentActivity() {
                 val dao = LibraryDatabase.get(applicationContext).libraryDao()
                 LibraryViewModel(SafLibraryRepository(applicationContext.contentResolver, dao))
             }
+            initializer { CopyViewModel(SafCopyStorage(applicationContext.contentResolver)) }
         }
         val models = ViewModelProvider(this, factory)
         val settingsModel = models[SettingsViewModel::class.java]
         val libraryModel = models[LibraryViewModel::class.java]
+        val copyModel = models[CopyViewModel::class.java]
 
         setContent {
             val settings by settingsModel.state.collectAsStateWithLifecycle()
@@ -54,6 +58,7 @@ class MainActivity : ComponentActivity() {
                 LumeryxApp(
                     settings = settings,
                     libraryModel = libraryModel,
+                    copyModel = copyModel,
                     onThemeSelected = settingsModel::setTheme,
                     onRetryRead = settingsModel::loadSettings,
                 )

@@ -37,7 +37,9 @@ import com.lumeryx.app.R
 import com.lumeryx.app.library.LibraryViewModel
 import com.lumeryx.app.settings.SettingsState
 import com.lumeryx.app.settings.ThemeMode
+import com.lumeryx.app.transfer.CopyViewModel
 import com.lumeryx.app.ui.library.LibraryScreen
+import com.lumeryx.app.ui.transfer.CopyScreen
 
 private enum class Destination(
     val route: String,
@@ -56,6 +58,7 @@ private enum class Destination(
 internal fun LumeryxApp(
     settings: SettingsState,
     libraryModel: LibraryViewModel,
+    copyModel: CopyViewModel,
     onThemeSelected: (ThemeMode) -> Unit,
     onRetryRead: () -> Unit,
 ) {
@@ -116,7 +119,7 @@ internal fun LumeryxApp(
                 SectionMessage(R.string.browser_unavailable, R.string.browser_description)
             }
             composable(Destination.Cloud.route) {
-                SectionMessage(R.string.cloud_unavailable, R.string.cloud_description)
+                CopyScreen(copyModel)
             }
             composable(Destination.Settings.route) {
                 SettingsScreen(currentSettings, onThemeSelected, onRetryRead)
