@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name" translatable="false">LUMERYX</string>
+    <string name="nav_home">Главная</string>
+    <string name="nav_library">Медиатека</string>
+    <string name="nav_browser">Браузер</string>
+    <string name="nav_cloud">Облако</string>
+    <string name="nav_settings">Настройки</string>
+    <string name="home_title">Личная медиатека</string>
+    <string name="home_description">В этой версии можно перемещаться между разделами и менять тему. Выбор папки и просмотр файлов появятся в 0.2.0.</string>
+    <string name="library_unavailable">Медиатека появится в 0.2.0</string>
+    <string name="library_description">Здесь можно будет открыть папку и просматривать фото и видео.</string>
+    <string name="browser_unavailable">Браузер появится в 0.4.0</string>
+    <string name="browser_description">Здесь будут вкладки, история и закладки.</string>
+    <string name="cloud_unavailable">Облако появится в 0.3.0</string>
+    <string name="cloud_description">Здесь можно будет подключить поддерживаемое хранилище и копировать файлы.</string>
+    <string name="settings_theme">Тема оформления</string>
+    <string name="theme_system">Системная</string>
+    <string name="theme_light">Светлая</string>
+    <string name="theme_dark">Тёмная</string>
+    <string name="settings_loading">Загружаем настройки…</string>
+    <string name="settings_read_error">Не удалось загрузить настройки. Используется последнее доступное оформление.</string>
+    <string name="settings_write_error">Не удалось сохранить выбранную тему.</string>
+    <string name="retry">Повторить</string>
+    <string name="about_app">О приложении</string>
+    <string name="app_version">Версия %1$s</string>
+</resources>
