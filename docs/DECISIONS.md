@@ -12,3 +12,9 @@
 
 - Медиатека показывает одну выбранную папку и читает вложенные папки при переходе. Доступ через SAF сохраняется только на чтение. Избранное привязано к дереву документов.
 - Добавлены Room 2.8.5 со схемой версии 1, KSP 2.3.10, Coil 3.3.0 и Media3 1.9.4. [Room](https://developer.android.com/jetpack/androidx/releases/room) · [Media3](https://developer.android.com/jetpack/androidx/releases/media3) · [Coil](https://coil-kt.github.io/coil/videos/)
+
+## 2026-11-27 · 0.3.0
+
+- Провайдеры подключаются через системный выбор папок. Копирование зависит от доступности разрешений и флагов провайдера. [Android SAF](https://developer.android.com/reference/android/provider/DocumentsContract)
+- Конфликты в этой сборке решаются пропуском или сохранением обеих версий. Замена требует отдельной проверки восстановления при сбое.
+- Официальный WebDAV Облака Mail требует пароль внешнего приложения. Прямой WebDAV находится за пределами этой реализации. [Документация Облака Mail](https://help.mail.ru/cloud/desktop/webdav/)
