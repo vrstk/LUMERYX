@@ -46,7 +46,7 @@ import com.lumeryx.app.ui.library.LibraryIconButton
 
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
-internal fun CopyScreen(model: CopyViewModel) {
+internal fun CopyScreen(model: CopyViewModel, onHistory: () -> Unit) {
     val state by model.state.collectAsStateWithLifecycle()
     val context = LocalContext.current
     var destinationPicker by rememberSaveable { mutableStateOf(false) }
@@ -166,6 +166,11 @@ internal fun CopyScreen(model: CopyViewModel) {
                 }
             }
         }
+        item {
+            OutlinedButton(onClick = onHistory) {
+                Text(stringResource(R.string.transfer_history))
+            }
+        }
     }
 
     state.review?.let { review ->
@@ -210,4 +215,5 @@ private val CopyStatus.label: Int
         CopyStatus.UNSUPPORTED -> R.string.copy_unsupported
         CopyStatus.UNVERIFIED -> R.string.copy_unverified
         CopyStatus.CLEANUP -> R.string.copy_cleanup
+        CopyStatus.JOURNAL_FAILED -> R.string.transfer_journal_failed
     }
