@@ -2,6 +2,7 @@
 
 import argparse
 import re
+import shlex
 import subprocess
 import sys
 import time
@@ -99,12 +100,19 @@ def choose_folder(button, folder, parent=None):
 
 
 def verify(path, expected=PAYLOAD):
-    actual = adb("exec-out", "cat", path)
+    try:
+        actual = adb("shell", "-T", f"cat {shlex.quote(path)}")
+    except subprocess.CalledProcessError as failure:
+        parent = shlex.quote(str(Path(path).parent))
+        listing = shell(f"ls -1 {parent}")
+        raise AssertionError(f"Cannot read {path!r}. Directory contents: {listing!r}") from failure
     if actual != expected:
         raise AssertionError(f"Unexpected content in {path}: {actual!r}")
 
 
 def setup(apk):
+    if shell("getprop", "ro.kernel.qemu") != "1" and shell("getprop", "ro.boot.qemu") != "1":
+        raise AssertionError("This scenario must run on a dedicated Android emulator")
     adb("root")
     adb("wait-for-device")
     for _ in range(8):
@@ -153,7 +161,7 @@ def run(apk):
     tap("Сохранить оба")
     wait_for(SUCCESS)
     duplicate = "fixture (2).txt"
-    verify(f"'{DOWNLOAD}/{TARGET}/{duplicate}'")
+    verify(f"{DOWNLOAD}/{TARGET}/{duplicate}")
     verify(f"{DOWNLOAD}/{TARGET}/{FIXTURE}", EXISTING)
 
     print("Copying a directory and reversing direction", flush=True)
@@ -165,8 +173,7 @@ def run(apk):
     tap(duplicate)
     tap("Копировать")
     wait_for(SUCCESS)
-    # The filename contains spaces and parentheses, so pass a quoted shell path.
-    verify(f"'{DOWNLOAD}/{SOURCE}/{duplicate}'")
+    verify(f"{DOWNLOAD}/{SOURCE}/{duplicate}")
     verify(f"{DOWNLOAD}/{SOURCE}/{FIXTURE}")
     assert not any(
         name.startswith("LUMERYX-part-")
